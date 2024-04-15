@@ -124,7 +124,7 @@
                     </jdbc>
                     <generator>
                         <database>
-                            <includes>flyway_schema_history</includes>
+                            <excludes>flyway_schema_history</excludes>
                             <inputSchema>public</inputSchema>
                         </database>
                         <target>
