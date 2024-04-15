@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>fr.norsys</groupId>
-    <artifactId>doc-management</artifactId>
+    <artifactId>doc-management-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>doc-management</name>
-    <description>doc-management</description>
+    <name>doc-management-api</name>
+    <description>doc-management-api</description>
     <properties>
         <java.version>17</java.version>
         <db.url>jdbc:postgresql://127.0.0.1:5432/docs-management</db.url>
@@ -128,7 +128,7 @@
                             <inputSchema>public</inputSchema>
                         </database>
                         <target>
-                            <packageName>fr.norsys.docmanagement</packageName>
+                            <packageName>fr.norsys.docmanagementapi</packageName>
                             <directory>target/generated-sources/jooq</directory>
                         </target>
                     </generator>

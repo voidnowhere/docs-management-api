@@ -1,4 +1,4 @@
-package fr.norsys.docmanagement;
+package fr.norsys.docmanagementapi;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
