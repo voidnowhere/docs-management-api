@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -23,5 +24,27 @@ public class DocService {
                 .build()
         ).toList();
 
+    }
+
+    public DocResponse findById(UUID id) {
+        Doc doc = docRepository.findById(id);
+        return DocResponse
+                .builder()
+                .id(doc.getId())
+                .title(doc.getTitle())
+                .creationDate(doc.getCreationDate())
+                .metadata(doc.getMetadata())
+                .build();
+    }
+
+    public List<DocResponse> searchByKeyword(String keyword) {
+        List<Doc> docs = docRepository.searchByKeyword(keyword);
+        return docs.stream().map(doc -> DocResponse.builder()
+                .id(doc.getId())
+                .title(doc.getTitle())
+                .creationDate(doc.getCreationDate())
+                .metadata(doc.getMetadata())
+                .build()
+        ).toList();
     }
 }
