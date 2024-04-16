@@ -48,12 +48,9 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
 
     @GetMapping("/{id}")
     public ResponseEntity<DocResponse> findById(@PathVariable UUID id) {
-        try {
-            DocResponse docResponse = docService.findById(id);
-            return ResponseEntity.ok(docResponse);
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.notFound().build();
-        }
+        DocResponse docResponse = docService.findById(id);
+
+        return ResponseEntity.ok(docResponse);
     }
 
     @PostMapping

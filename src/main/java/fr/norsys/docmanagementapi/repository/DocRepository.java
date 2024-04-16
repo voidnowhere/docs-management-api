@@ -2,6 +2,7 @@ package fr.norsys.docmanagementapi.repository;
 
 import fr.norsys.docmanagementapi.entity.Metadata;
 import fr.norsys.docmanagementapi.entity.Doc;
+import fr.norsys.docmanagementapi.exception.DocNotFound;
 import lombok.RequiredArgsConstructor;
 import org.jooq.*;
 import org.springframework.stereotype.Repository;
@@ -26,7 +27,7 @@ public class DocRepository {
         Doc doc = Optional.ofNullable(dslContext
                         .fetchOne(DOC, DOC.ID
                                 .eq(id)))
-                .orElseThrow(NoSuchElementException::new)
+                .orElseThrow(DocNotFound::new)
                 .into(Doc.class);
 
         doc.setMetadata(fetchMetadataForDoc(doc.getId()));
