@@ -1,14 +1,14 @@
 package fr.norsys.docmanagementapi.controller;
 
+import fr.norsys.docmanagementapi.dto.DocPostRequest;
 import fr.norsys.docmanagementapi.dto.DocResponse;
+import fr.norsys.docmanagementapi.exception.MethodArgumentNotValidExceptionHandler;
 import fr.norsys.docmanagementapi.service.DocService;
-import lombok.Getter;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -17,7 +17,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/docs")
 @RequiredArgsConstructor
-public class DocController {
+public class DocController implements MethodArgumentNotValidExceptionHandler {
     private final DocService docService;
 
     @GetMapping
@@ -46,5 +46,12 @@ public class DocController {
         }
     }
 
+    @PostMapping
+    public ResponseEntity<Void> createDoc(
+            @Valid @RequestBody DocPostRequest docPostRequest
+    ) {
+        docService.createDoc(docPostRequest);
 
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 }

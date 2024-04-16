@@ -14,6 +14,7 @@ import java.util.UUID;
 public class Doc {
     private UUID id;
     private String title;
+    private String type;
     private LocalDateTime creationDate;
     private Map<String, String> metadata;
 }

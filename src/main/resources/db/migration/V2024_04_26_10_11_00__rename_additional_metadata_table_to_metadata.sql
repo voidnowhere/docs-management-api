@@ -1,0 +1,1 @@
+alter table additional_metadata rename to metadata;

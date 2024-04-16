@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static fr.norsys.docmanagementapi.Tables.ADDITIONAL_METADATA;
+import static fr.norsys.docmanagementapi.Tables.METADATA;
 import static fr.norsys.docmanagementapi.Tables.DOC;
 
 @Repository
@@ -38,9 +38,9 @@ public class DocRepository {
 
         List<Doc> docs = dslContext.select(DOC.ID, DOC.TITLE, DOC.CREATION_DATE, DOC.TYPE)
                 .from(DOC)
-                .leftJoin(ADDITIONAL_METADATA)
-                .on(ADDITIONAL_METADATA.DOC_ID.eq(DOC.ID)
-                        .and(ADDITIONAL_METADATA.VALUE.likeIgnoreCase(likeExpression)))
+                .leftJoin(METADATA)
+                .on(METADATA.DOC_ID.eq(DOC.ID)
+                        .and(METADATA.VALUE.likeIgnoreCase(likeExpression)))
                 .where(getSearchCondition(likeExpression))
                 .fetchInto(Doc.class);
 
@@ -51,8 +51,8 @@ public class DocRepository {
         Set<UUID> docIds = docs.stream().map(Doc::getId).collect(Collectors.toSet());
 
         List<Metadata> metadata = dslContext
-                .selectFrom(ADDITIONAL_METADATA)
-                .where(ADDITIONAL_METADATA.DOC_ID.in(docIds))
+                .selectFrom(METADATA)
+                .where(METADATA.DOC_ID.in(docIds))
                 .fetchInto(Metadata.class);
 
         Map<UUID, List<Metadata>> metadataMap = metadata.stream()
@@ -69,8 +69,8 @@ public class DocRepository {
 
     private Map<String, String> fetchMetadataForDoc(UUID docId) {
         List<Metadata> metadata = dslContext
-                .selectFrom(ADDITIONAL_METADATA)
-                .where(ADDITIONAL_METADATA.DOC_ID.eq(docId))
+                .selectFrom(METADATA)
+                .where(METADATA.DOC_ID.eq(docId))
                 .fetchInto(Metadata.class);
 
         return metadata.stream()
@@ -81,8 +81,16 @@ public class DocRepository {
         return DOC.TITLE.likeIgnoreCase(likeExpression)
                 .or(DOC.CREATION_DATE.likeIgnoreCase(likeExpression))
                 .or(DOC.TYPE.likeIgnoreCase(likeExpression))
-                .or(ADDITIONAL_METADATA.VALUE.likeIgnoreCase(likeExpression))
-                .or(ADDITIONAL_METADATA.DOC_ID.isNotNull());
+                .or(METADATA.VALUE.likeIgnoreCase(likeExpression))
+                .or(METADATA.DOC_ID.isNotNull());
     }
 
+    public UUID createDoc(Doc doc) {
+        return dslContext
+                .insertInto(DOC)
+                .set(DOC.TITLE, doc.getTitle())
+                .set(DOC.TYPE, doc.getType())
+                .returningResult(DOC.ID)
+                .fetchOneInto(UUID.class);
+    }
 }

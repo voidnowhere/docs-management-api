@@ -8,3 +8,6 @@ spring:
     driver-class-name: org.postgresql.Driver
   jooq:
     sql-dialect: postgres
+logging:
+  level:
+    org.jooq.tools.LoggerListener: DEBUG
