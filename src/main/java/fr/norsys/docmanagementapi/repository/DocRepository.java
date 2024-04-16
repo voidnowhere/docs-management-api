@@ -93,4 +93,11 @@ public class DocRepository {
                 .returningResult(DOC.ID)
                 .fetchOneInto(UUID.class);
     }
+
+    public void deleteDoc(UUID docId) {
+        dslContext
+                .delete(DOC)
+                .where(DOC.ID.eq(docId))
+                .execute();
+    }
 }
