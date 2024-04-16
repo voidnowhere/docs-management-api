@@ -69,4 +69,8 @@ public class DocService {
 
         metadataRepository.bulkCreateMetadata(metadata);
     }
+
+    public void deleteDoc(UUID docId) {
+        docRepository.deleteDoc(docId);
+    }
 }

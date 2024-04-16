@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -21,8 +22,17 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
     private final DocService docService;
 
     @GetMapping
-    public ResponseEntity<List<DocResponse>> findAll() {
-        List<DocResponse> docs = docService.findAll();
+    public ResponseEntity<List<DocResponse>> findAll(
+            @RequestParam(required = false, name = "keyword") Optional<String> optionalKeyword
+    ) {
+        List<DocResponse> docs;
+
+        if (optionalKeyword.isEmpty()) {
+            docs = docService.findAll();
+        } else {
+            docs = docService.searchByKeyword(optionalKeyword.get());
+        }
+
         return docs.isEmpty() ?
                 ResponseEntity.noContent().build() :
                 ResponseEntity.ok(docs);
@@ -38,12 +48,9 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
 
     @GetMapping("/{id}")
     public ResponseEntity<DocResponse> findById(@PathVariable UUID id) {
-        try {
-            DocResponse docResponse = docService.findById(id);
-            return ResponseEntity.ok(docResponse);
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.notFound().build();
-        }
+        DocResponse docResponse = docService.findById(id);
+
+        return ResponseEntity.ok(docResponse);
     }
 
     @PostMapping
@@ -53,5 +60,12 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
         docService.createDoc(docPostRequest);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @DeleteMapping("/{docId}")
+    public ResponseEntity<Void> deleteDoc(@PathVariable UUID docId) {
+        docService.deleteDoc(docId);
+
+        return ResponseEntity.noContent().build();
     }
 }
