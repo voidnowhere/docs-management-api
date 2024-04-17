@@ -77,6 +77,7 @@ public class DocService {
         String filePath = storageService.storeFile(doc.getId(), docPostRequest.file());
         doc.setPath(filePath);
 
+        // no need, we already have the checksum
         String fileChecksum = storageService.getFileChecksum(filePath);
         doc.setChecksum(fileChecksum);
 
@@ -87,7 +88,7 @@ public class DocService {
                 .metadata()
                 .forEach(m -> metadata.add(new Metadata(doc.getId(), m.key(), m.value())));
 
-        metadataRepository.bulkCreateMetadata(metadata);
+        metadataRepository.bulkCreateMetadata2(metadata);
     }
 
     public void deleteDoc(UUID docId) {

@@ -30,7 +30,7 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
     ) {
         List<DocResponse> docs;
 
-        if (optionalKeyword.isEmpty()) {
+        if (optionalKeyword.isEmpty() || optionalKeyword.get().isEmpty()) {
             docs = docService.findAll();
         } else {
             docs = docService.searchByKeyword(optionalKeyword.get());
