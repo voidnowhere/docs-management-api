@@ -6,12 +6,15 @@ import fr.norsys.docmanagementapi.exception.MethodArgumentNotValidExceptionHandl
 import fr.norsys.docmanagementapi.service.DocService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -55,8 +58,8 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
 
     @PostMapping
     public ResponseEntity<Void> createDoc(
-            @Valid @RequestBody DocPostRequest docPostRequest
-    ) {
+            @Valid DocPostRequest docPostRequest
+    ) throws IOException {
         docService.createDoc(docPostRequest);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -67,5 +70,17 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
         docService.deleteDoc(docId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{docId}/download")
+    public ResponseEntity<Resource> downloadDoc(@PathVariable UUID docId) throws MalformedURLException {
+        Resource file = docService.downloadDoc(docId);
+
+        return ResponseEntity
+                .ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + file.getFilename() + "\""
+                ).body(file);
     }
 }

@@ -1,17 +1,18 @@
 package fr.norsys.docmanagementapi.repository;
 
-import fr.norsys.docmanagementapi.entity.Metadata;
 import fr.norsys.docmanagementapi.entity.Doc;
-import fr.norsys.docmanagementapi.exception.DocNotFound;
+import fr.norsys.docmanagementapi.entity.Metadata;
+import fr.norsys.docmanagementapi.exception.DocNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.jooq.*;
+import org.jooq.Condition;
+import org.jooq.DSLContext;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static fr.norsys.docmanagementapi.Tables.METADATA;
 import static fr.norsys.docmanagementapi.Tables.DOC;
+import static fr.norsys.docmanagementapi.Tables.METADATA;
 
 @Repository
 @RequiredArgsConstructor
@@ -27,7 +28,7 @@ public class DocRepository {
         Doc doc = Optional.ofNullable(dslContext
                         .fetchOne(DOC, DOC.ID
                                 .eq(id)))
-                .orElseThrow(DocNotFound::new)
+                .orElseThrow(DocNotFoundException::new)
                 .into(Doc.class);
 
         doc.setMetadata(fetchMetadataForDoc(doc.getId()));
@@ -86,13 +87,15 @@ public class DocRepository {
                 .or(METADATA.DOC_ID.isNotNull());
     }
 
-    public UUID createDoc(Doc doc) {
-        return dslContext
+    public void createDoc(Doc doc) {
+        dslContext
                 .insertInto(DOC)
+                .set(DOC.ID, doc.getId())
                 .set(DOC.TITLE, doc.getTitle())
                 .set(DOC.TYPE, doc.getType())
-                .returningResult(DOC.ID)
-                .fetchOneInto(UUID.class);
+                .set(DOC.PATH, doc.getPath())
+                .set(DOC.CHECKSUM, doc.getChecksum())
+                .execute();
     }
 
     public void deleteDoc(UUID docId) {
@@ -100,5 +103,22 @@ public class DocRepository {
                 .delete(DOC)
                 .where(DOC.ID.eq(docId))
                 .execute();
+    }
+
+    public String getDocPath(UUID docId) {
+        return Optional.ofNullable(dslContext
+                .select(DOC.PATH)
+                .from(DOC)
+                .where(DOC.ID.eq(docId))
+                .fetchOneInto(Doc.class)
+        ).orElseThrow(DocNotFoundException::new).getPath();
+    }
+
+    public boolean isDocChecksumExists(String fileChecksum) {
+        return dslContext.fetchExists(dslContext
+                .selectOne()
+                .from(DOC)
+                .where(DOC.CHECKSUM.eq(fileChecksum))
+        );
     }
 }
