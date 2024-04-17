@@ -7,6 +7,7 @@ import fr.norsys.docmanagementapi.entity.Metadata;
 import fr.norsys.docmanagementapi.exception.DocAlreadyExistException;
 import fr.norsys.docmanagementapi.repository.DocRepository;
 import fr.norsys.docmanagementapi.repository.MetadataRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +65,7 @@ public class DocService {
     }
 
     @Transactional
-    public void createDoc(DocPostRequest docPostRequest) throws IOException {
+    public void createDoc(@Valid DocPostRequest docPostRequest) throws IOException {
         String requestFileChecksum = storageService.getFileChecksum(docPostRequest.file());
         if (docRepository.isDocChecksumExists(requestFileChecksum)) {
             throw new DocAlreadyExistException("doc already exist");
