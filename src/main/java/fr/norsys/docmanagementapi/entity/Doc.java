@@ -16,5 +16,7 @@ public class Doc {
     private String title;
     private String type;
     private LocalDateTime creationDate;
+    private String path;
+    private String checksum;
     private Map<String, String> metadata;
 }

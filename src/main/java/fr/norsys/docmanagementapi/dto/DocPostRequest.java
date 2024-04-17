@@ -1,18 +1,14 @@
 package fr.norsys.docmanagementapi.dto;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Set;
 
 public record DocPostRequest(
-        @NotBlank
-        @Size(max = 100)
-        String title,
-        @NotBlank
-        @Size(max = 50)
-        String type,
+        @NotNull
+        MultipartFile file,
         @Valid
         Set<MetadataDto> metadata
 ) {
