@@ -2,12 +2,18 @@ spring:
   application:
     name: doc-management-api
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/docs-management
+    url: jdbc:postgresql://localhost:5432/docs-management
     username: user
     password: password
     driver-class-name: org.postgresql.Driver
   jooq:
     sql-dialect: postgres
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8090/realms/doc-management
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
 logging:
   level:
     org.jooq.tools.LoggerListener: DEBUG
