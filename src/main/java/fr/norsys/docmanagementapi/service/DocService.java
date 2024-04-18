@@ -29,6 +29,7 @@ public class DocService {
     private final DocRepository docRepository;
     private final MetadataRepository metadataRepository;
     private final StorageService storageService;
+    private final UserService userService;
 
     public List<DocResponse> findAll() {
         List<Doc> docs = docRepository.findAll();
@@ -66,6 +67,7 @@ public class DocService {
 
     @Transactional
     public void createDoc(@Valid DocPostRequest docPostRequest) throws IOException {
+        String userId = userService.getUserId();
         String requestFileChecksum = storageService.getFileChecksum(docPostRequest.file());
         if (docRepository.isDocChecksumExists(requestFileChecksum)) {
             throw new DocAlreadyExistException("doc already exist");
@@ -82,6 +84,7 @@ public class DocService {
         String fileChecksum = storageService.getFileChecksum(filePath);
         doc.setChecksum(fileChecksum);
 
+        doc.setOwnerId(UUID.fromString(userId));
         docRepository.createDoc(doc);
 
         Set<Metadata> metadata = new HashSet<>();
@@ -89,11 +92,13 @@ public class DocService {
                 .metadata()
                 .forEach(m -> metadata.add(new Metadata(doc.getId(), m.key(), m.value())));
 
-        metadataRepository.bulkCreateMetadata2(metadata);
+        metadataRepository.bulkCreateMetadata(metadata);
     }
 
-    public void deleteDoc(UUID docId) {
+    public void deleteDoc(UUID docId) throws IOException {
+        storageService.deleteFile(docRepository.getDocPath(docId));
         docRepository.deleteDoc(docId);
+
     }
 
     public Resource downloadDoc(UUID docId) throws MalformedURLException {

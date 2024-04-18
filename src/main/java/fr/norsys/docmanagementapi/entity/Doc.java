@@ -19,4 +19,5 @@ public class Doc {
     private String path;
     private String checksum;
     private Map<String, String> metadata;
+    private UUID ownerId;
 }

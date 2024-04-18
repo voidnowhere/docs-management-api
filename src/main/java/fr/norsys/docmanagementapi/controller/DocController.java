@@ -74,7 +74,7 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
     }
 
     @DeleteMapping("/{docId}")
-    public ResponseEntity<Void> deleteDoc(@PathVariable UUID docId) {
+    public ResponseEntity<Void> deleteDoc(@PathVariable UUID docId) throws IOException {
         docService.deleteDoc(docId);
 
         return ResponseEntity.noContent().build();

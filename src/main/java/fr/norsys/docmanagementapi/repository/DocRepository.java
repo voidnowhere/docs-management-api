@@ -3,6 +3,7 @@ package fr.norsys.docmanagementapi.repository;
 import fr.norsys.docmanagementapi.entity.Doc;
 import fr.norsys.docmanagementapi.entity.Metadata;
 import fr.norsys.docmanagementapi.exception.DocNotFoundException;
+import fr.norsys.docmanagementapi.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -18,9 +19,13 @@ import static fr.norsys.docmanagementapi.Tables.METADATA;
 @RequiredArgsConstructor
 public class DocRepository {
     private final DSLContext dslContext;
+    private final UserService userService;
 
     public List<Doc> findAll() {
-        List<Doc> docs = dslContext.selectFrom(DOC).fetchInto(Doc.class);
+        List<Doc> docs = dslContext.select(DOC.ID, DOC.TITLE, DOC.CREATION_DATE, DOC.TYPE)
+                .from(DOC)
+                .where(ownerCondition())
+                .fetchInto(Doc.class);
         return setMetadataToDocs(docs);
     }
 
@@ -37,13 +42,13 @@ public class DocRepository {
 
     public List<Doc> searchByKeyword(String keyword) {
         String likeExpression = "%" + keyword + "%";
-
         List<Doc> docs = dslContext.select(DOC.ID, DOC.TITLE, DOC.CREATION_DATE, DOC.TYPE)
                 .from(DOC)
                 .leftJoin(METADATA)
                 .on(METADATA.DOC_ID.eq(DOC.ID)
                         .and(METADATA.VALUE.likeIgnoreCase(likeExpression)))
-                .where(getSearchCondition(likeExpression))
+                .where(ownerCondition())
+                .and((getSearchCondition(likeExpression)))
                 .fetchInto(Doc.class);
 
         return setMetadataToDocs(docs);
@@ -79,14 +84,6 @@ public class DocRepository {
                 .collect(Collectors.toMap(Metadata::getKey, Metadata::getValue));
     }
 
-    private Condition getSearchCondition(String likeExpression) {
-        return DOC.TITLE.likeIgnoreCase(likeExpression)
-                .or(DOC.CREATION_DATE.likeIgnoreCase(likeExpression))
-                .or(DOC.TYPE.likeIgnoreCase(likeExpression))
-                .or(METADATA.VALUE.likeIgnoreCase(likeExpression))
-                .or(METADATA.DOC_ID.isNotNull());
-    }
-
     public void createDoc(Doc doc) {
         dslContext
                 .insertInto(DOC)
@@ -95,10 +92,15 @@ public class DocRepository {
                 .set(DOC.TYPE, doc.getType())
                 .set(DOC.PATH, doc.getPath())
                 .set(DOC.CHECKSUM, doc.getChecksum())
+                .set(DOC.OWNER_ID, doc.getOwnerId())
                 .execute();
     }
 
     public void deleteDoc(UUID docId) {
+        UUID ownerId = findById(docId).getOwnerId();
+        if (!userService.isOwner(ownerId)) {
+            throw new RuntimeException("You are not the owner of this document");
+        }
         dslContext
                 .delete(DOC)
                 .where(DOC.ID.eq(docId))
@@ -121,4 +123,17 @@ public class DocRepository {
                 .where(DOC.CHECKSUM.eq(fileChecksum))
         );
     }
+
+    private Condition getSearchCondition(String likeExpression) {
+        return DOC.TITLE.likeIgnoreCase(likeExpression)
+                .or(DOC.CREATION_DATE.likeIgnoreCase(likeExpression))
+                .or(DOC.TYPE.likeIgnoreCase(likeExpression))
+                .or(METADATA.VALUE.likeIgnoreCase(likeExpression))
+                .or(METADATA.DOC_ID.isNotNull());
+    }
+
+    private Condition ownerCondition() {
+        return DOC.OWNER_ID.eq(UUID.fromString(userService.getUserId()));
+    }
+
 }
