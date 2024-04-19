@@ -7,11 +7,13 @@ import fr.norsys.docmanagementapi.dto.DocResponse;
 import fr.norsys.docmanagementapi.dto.MetadataDto;
 import fr.norsys.docmanagementapi.exception.MethodArgumentNotValidExceptionHandler;
 import fr.norsys.docmanagementapi.service.DocService;
+import fr.norsys.docmanagementapi.service.SecurityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,6 +30,7 @@ import java.util.UUID;
 public class DocController implements MethodArgumentNotValidExceptionHandler {
     private final DocService docService;
     private final ObjectMapper objectMapper;
+    private final SecurityService securityService;
 
     @GetMapping
     public ResponseEntity<List<DocResponse>> findAll(
@@ -74,6 +77,7 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
     }
 
     @DeleteMapping("/{docId}")
+    @PreAuthorize("@securityService.isDocBelongToCurrentUser(#docId)")
     public ResponseEntity<Void> deleteDoc(@PathVariable UUID docId) throws IOException {
         docService.deleteDoc(docId);
 
@@ -81,6 +85,7 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
     }
 
     @GetMapping("/{docId}/download")
+    @PreAuthorize("@securityService.isDocBelongToCurrentUser(#docId)")
     public ResponseEntity<Resource> downloadDoc(@PathVariable UUID docId) throws MalformedURLException {
         Resource file = docService.downloadDoc(docId);
 

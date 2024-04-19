@@ -3,7 +3,7 @@ package fr.norsys.docmanagementapi.repository;
 import fr.norsys.docmanagementapi.entity.Doc;
 import fr.norsys.docmanagementapi.entity.Metadata;
 import fr.norsys.docmanagementapi.exception.DocNotFoundException;
-import fr.norsys.docmanagementapi.service.UserService;
+import fr.norsys.docmanagementapi.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -19,7 +19,7 @@ import static fr.norsys.docmanagementapi.Tables.METADATA;
 @RequiredArgsConstructor
 public class DocRepository {
     private final DSLContext dslContext;
-    private final UserService userService;
+    private final AuthService authService;
 
     public List<Doc> findAll() {
         List<Doc> docs = dslContext.select(DOC.ID, DOC.TITLE, DOC.CREATION_DATE, DOC.TYPE)
@@ -97,10 +97,6 @@ public class DocRepository {
     }
 
     public void deleteDoc(UUID docId) {
-        UUID ownerId = findById(docId).getOwnerId();
-        if (!userService.isOwner(ownerId)) {
-            throw new RuntimeException("You are not the owner of this document");
-        }
         dslContext
                 .delete(DOC)
                 .where(DOC.ID.eq(docId))
@@ -114,6 +110,15 @@ public class DocRepository {
                 .where(DOC.ID.eq(docId))
                 .fetchOneInto(Doc.class)
         ).orElseThrow(DocNotFoundException::new).getPath();
+    }
+
+    public UUID getDocOwnerId(UUID docId) {
+        return Optional.ofNullable(dslContext
+                .select(DOC.OWNER_ID)
+                .from(DOC)
+                .where(DOC.ID.eq(docId))
+                .fetchOneInto(Doc.class)
+        ).orElseThrow(DocNotFoundException::new).getOwnerId();
     }
 
     public boolean isDocChecksumExists(String fileChecksum) {
@@ -133,7 +138,7 @@ public class DocRepository {
     }
 
     private Condition ownerCondition() {
-        return DOC.OWNER_ID.eq(UUID.fromString(userService.getUserId()));
+        return DOC.OWNER_ID.eq(authService.getCurrentUserId());
     }
 
 }

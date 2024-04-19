@@ -6,30 +6,23 @@ import lombok.AllArgsConstructor;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.UUID;
 
-@Service
-@AllArgsConstructor
-public class UserService implements IAuthenticationFacade {
-    public static final String REALM_NAME = "doc-management";
-    Keycloak keycloak;
+@Component
+public class AuthService implements IAuthenticationFacade {
 
     @Override
     public Authentication getAuthentication() {
         return SecurityContextHolder.getContext().getAuthentication();
     }
 
-    public String getUserId() {
-        return getAuthentication().getName();
-    }
-
-    public Boolean isOwner(UUID ownerId) {
-        String userId = getUserId();
-        return ownerId.toString().equals(userId);
+    public UUID getCurrentUserId() {
+        return UUID.fromString(getAuthentication().getName());
     }
 
     public List<UserResponse> getAllUsers() {

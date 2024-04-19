@@ -29,7 +29,7 @@ public class DocService {
     private final DocRepository docRepository;
     private final MetadataRepository metadataRepository;
     private final StorageService storageService;
-    private final UserService userService;
+    private final AuthService authService;
 
     public List<DocResponse> findAll() {
         List<Doc> docs = docRepository.findAll();
@@ -67,9 +67,9 @@ public class DocService {
 
     @Transactional
     public void createDoc(@Valid DocPostRequest docPostRequest) throws IOException {
-        String userId = userService.getUserId();
-        String requestFileChecksum = storageService.getFileChecksum(docPostRequest.file());
-        if (docRepository.isDocChecksumExists(requestFileChecksum)) {
+        UUID currentUserId = authService.getCurrentUserId();
+        String fileChecksum = storageService.getFileChecksum(docPostRequest.file());
+        if (docRepository.isDocChecksumExists(fileChecksum)) {
             throw new DocAlreadyExistException("doc already exist");
         }
 
@@ -80,11 +80,9 @@ public class DocService {
         String filePath = storageService.storeFile(doc.getId(), docPostRequest.file());
         doc.setPath(filePath);
 
-        // no need, we already have the checksum
-        String fileChecksum = storageService.getFileChecksum(filePath);
         doc.setChecksum(fileChecksum);
 
-        doc.setOwnerId(UUID.fromString(userId));
+        doc.setOwnerId(currentUserId);
         docRepository.createDoc(doc);
 
         Set<Metadata> metadata = new HashSet<>();
