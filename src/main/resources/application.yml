@@ -17,3 +17,12 @@ spring:
 logging:
   level:
     org.jooq.tools.LoggerListener: DEBUG
+
+keycloak:
+  admin:
+    server-url: ${KEYCLOAK_ADMIN_URL:http://localhost:8090/}
+    client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}
+    realm: ${KEYCLOAK_ADMIN_REALM:master}
+    username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+    password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+    grant-type: ${KEYCLOAK_ADMIN_GRANT_TYPE:password}
