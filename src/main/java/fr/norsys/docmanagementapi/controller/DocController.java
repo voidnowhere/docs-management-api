@@ -35,7 +35,7 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
     ) {
         List<DocResponse> docs;
 
-        if (optionalKeyword.isEmpty()) {
+        if (optionalKeyword.isEmpty() || optionalKeyword.get().isEmpty()) {
             docs = docService.findAll();
         } else {
             docs = docService.searchByKeyword(optionalKeyword.get());
@@ -74,7 +74,7 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
     }
 
     @DeleteMapping("/{docId}")
-    public ResponseEntity<Void> deleteDoc(@PathVariable UUID docId) {
+    public ResponseEntity<Void> deleteDoc(@PathVariable UUID docId) throws IOException {
         docService.deleteDoc(docId);
 
         return ResponseEntity.noContent().build();

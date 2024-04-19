@@ -7,6 +7,7 @@ import org.jooq.DSLContext;
 import org.springframework.stereotype.Repository;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static fr.norsys.docmanagementapi.Tables.METADATA;
@@ -28,5 +29,16 @@ public class MetadataRepository {
                 }).collect(Collectors.toSet());
 
         dslContext.batchInsert(metadataRecords).execute();
+    }
+
+    public void bulkCreateMetadata2(Set<Metadata> metadata) {
+        dslContext.batch(dslContext
+                        .insertInto(METADATA, METADATA.DOC_ID, METADATA.KEY, METADATA.VALUE)
+                        .values((UUID) null, null, null))
+                .bind(metadata
+                        .stream()
+                        .map(m -> new Object[]{m.getDocId(), m.getKey(), m.getValue()})
+                        .toArray(Object[][]::new))
+                .execute();
     }
 }
