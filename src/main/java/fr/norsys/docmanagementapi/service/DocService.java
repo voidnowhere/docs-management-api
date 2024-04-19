@@ -2,13 +2,17 @@ package fr.norsys.docmanagementapi.service;
 
 import fr.norsys.docmanagementapi.dto.DocPostRequest;
 import fr.norsys.docmanagementapi.dto.DocResponse;
+import fr.norsys.docmanagementapi.dto.ShareDocRequest;
 import fr.norsys.docmanagementapi.entity.Doc;
+import fr.norsys.docmanagementapi.entity.DocPermission;
 import fr.norsys.docmanagementapi.entity.Metadata;
 import fr.norsys.docmanagementapi.exception.DocAlreadyExistException;
+import fr.norsys.docmanagementapi.repository.DocPermissionRepository;
 import fr.norsys.docmanagementapi.repository.DocRepository;
 import fr.norsys.docmanagementapi.repository.MetadataRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -30,6 +34,8 @@ public class DocService {
     private final MetadataRepository metadataRepository;
     private final StorageService storageService;
     private final AuthService authService;
+    private final UserService userService;
+    private final DocPermissionRepository docPermissionRepository;
 
     public List<DocResponse> findAll() {
         List<Doc> docs = docRepository.findAll();
@@ -103,5 +109,24 @@ public class DocService {
         String docPath = docRepository.getDocPath(docId);
 
         return storageService.getFileAsResource(docPath);
+    }
+
+    public void shareDoc(UUID docId, ShareDocRequest shareDocRequest) {
+        List<UserRepresentation> users = userService.getAllUsers(shareDocRequest.emails());
+
+        Set<DocPermission> docPermissions = new HashSet<>();
+
+        users.forEach(user -> docPermissions.add(
+                new DocPermission(
+                        docId,
+                        UUID.fromString(user.getId()),
+                        user.getEmail(),
+                        shareDocRequest.permissionType()
+                )
+        ));
+
+        docPermissionRepository.deleteDocPermissionByDocId(docId);
+
+        docPermissionRepository.bulkCreateDocPermission(docPermissions);
     }
 }
