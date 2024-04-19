@@ -81,7 +81,6 @@ public class StorageService {
     }
 
     public void deleteFile(String filePath) throws IOException {
-        System.out.println(filePath);
         Files.delete(Path.of(filePath));
     }
 }
