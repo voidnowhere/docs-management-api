@@ -129,4 +129,16 @@ public class DocService {
 
         docPermissionRepository.bulkCreateDocPermission(docPermissions);
     }
+
+    public List<DocResponse> getSharedDocs() {
+        List<Doc> docs = docRepository.getSharedDocs();
+        return docs.stream().map(doc -> DocResponse.builder()
+                .id(doc.getId())
+                .title(doc.getTitle())
+                .creationDate(doc.getCreationDate())
+                .metadata(doc.getMetadata())
+                .build()
+        ).toList();
+
+    }
 }

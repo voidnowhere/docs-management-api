@@ -12,8 +12,7 @@ import org.springframework.stereotype.Repository;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static fr.norsys.docmanagementapi.Tables.DOC;
-import static fr.norsys.docmanagementapi.Tables.METADATA;
+import static fr.norsys.docmanagementapi.Tables.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -139,6 +138,16 @@ public class DocRepository {
 
     private Condition ownerCondition() {
         return DOC.OWNER_ID.eq(authService.getCurrentUserId());
+    }
+
+    public List<Doc> getSharedDocs() {
+        List<Doc> docs = dslContext.select(DOC.ID, DOC.TITLE, DOC.CREATION_DATE, DOC.TYPE)
+                .from(DOC)
+                .rightJoin(DOC_PERMISSION)
+                .on(DOC_PERMISSION.DOC_ID.eq(DOC.ID))
+                .where(DOC_PERMISSION.USER_ID.eq(authService.getCurrentUserId()))
+                .fetchInto(Doc.class);
+        return setMetadataToDocs(docs);
     }
 
 }

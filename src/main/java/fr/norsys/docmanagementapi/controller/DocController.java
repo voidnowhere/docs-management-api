@@ -109,4 +109,13 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
 
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/shared-docs")
+    public ResponseEntity<List<DocResponse>> getSharedDocs() {
+        List<DocResponse> docs = docService.getSharedDocs();
+        return docs.isEmpty() ?
+                ResponseEntity.noContent().build() :
+                ResponseEntity.ok(docs);
+    }
+
 }
