@@ -13,13 +13,13 @@ public class UserService {
     private static final String REALM_NAME = "doc-management";
     Keycloak keycloak;
 
-    public List<String> getAllUsers(List<String> emails) {
+    public List<String> getUsersIds(List<String> emails) {
         return keycloak
                 .realm(REALM_NAME)
                 .users().list()
                 .stream()
                 .filter(user -> emails.contains(user.getEmail()))
-                .map(UserRepresentation::getUsername)
+                .map(UserRepresentation::getId)
                 .toList();
     }
 }
