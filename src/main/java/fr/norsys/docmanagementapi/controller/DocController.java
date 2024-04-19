@@ -87,7 +87,10 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
     }
 
     @GetMapping("/{docId}/download")
-    @PreAuthorize("@securityService.isDocBelongToCurrentUser(#docId)")
+    @PreAuthorize("""
+            @securityService.isDocBelongToCurrentUser(#docId) or
+            @securityService.hasPermissionToDocDownload(#docId)
+            """)
     public ResponseEntity<Resource> downloadDoc(@PathVariable UUID docId) throws MalformedURLException {
         Resource file = docService.downloadDoc(docId);
 

@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static fr.norsys.docmanagementapi.Tables.DOC;
 import static fr.norsys.docmanagementapi.Tables.DOC_PERMISSION;
 
 @Repository
@@ -40,5 +41,14 @@ public class DocPermissionRepository {
                 .deleteFrom(DOC_PERMISSION)
                 .where(DOC_PERMISSION.DOC_ID.eq(docId))
                 .execute();
+    }
+
+    public boolean isUserIdExistsInDocPermission(UUID docId, UUID userId) {
+        return dslContext.fetchExists(dslContext
+                .selectOne()
+                .from(DOC_PERMISSION)
+                .where(DOC_PERMISSION.DOC_ID.eq(docId))
+                .and(DOC_PERMISSION.USER_ID.eq(userId))
+        );
     }
 }
