@@ -1,6 +1,6 @@
 package fr.norsys.docmanagementapi.service;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.stereotype.Service;
@@ -8,10 +8,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class UserService {
     private static final String REALM_NAME = "doc-management";
-    Keycloak keycloak;
+    private final Keycloak keycloak;
 
     public List<UserRepresentation> getAllUsers(List<String> emails) {
         return keycloak

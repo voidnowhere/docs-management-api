@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.norsys.docmanagementapi.dto.DocPostRequest;
 import fr.norsys.docmanagementapi.dto.DocResponse;
 import fr.norsys.docmanagementapi.dto.MetadataDto;
+import fr.norsys.docmanagementapi.dto.ShareDocRequest;
 import fr.norsys.docmanagementapi.exception.MethodArgumentNotValidExceptionHandler;
 import fr.norsys.docmanagementapi.service.DocService;
 import fr.norsys.docmanagementapi.service.SecurityService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -95,5 +97,16 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
                         HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + file.getFilename() + "\""
                 ).body(file);
+    }
+
+    @PostMapping("/{docId}/share")
+    @PreAuthorize("@securityService.isDocBelongToCurrentUser(#docId)")
+    public ResponseEntity<Void> shareDoc(
+            @PathVariable UUID docId,
+            @Valid @RequestBody ShareDocRequest shareDocRequest
+    ) {
+        docService.shareDoc(docId, shareDocRequest);
+
+        return ResponseEntity.noContent().build();
     }
 }
