@@ -79,4 +79,9 @@ public class StorageService {
     public String getFileChecksum(MultipartFile file) throws IOException {
         return DigestUtils.sha256Hex(file.getInputStream());
     }
+
+    public void deleteFile(String filePath) throws IOException {
+        System.out.println(filePath);
+        Files.delete(Path.of(filePath));
+    }
 }
