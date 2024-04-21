@@ -1,6 +1,5 @@
 package fr.norsys.docmanagementapi.controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.norsys.docmanagementapi.dto.*;
 import fr.norsys.docmanagementapi.exception.MethodArgumentNotValidExceptionHandler;
@@ -72,11 +71,9 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
     @PostMapping
     public ResponseEntity<Void> createDoc(
             @RequestPart MultipartFile file,
-            @RequestParam String metadata
+            @RequestPart Set<MetadataDto> metadata
     ) throws IOException {
-        Set<MetadataDto> metadataDto = objectMapper.readValue(metadata, new TypeReference<>() {
-        });
-        docService.createDoc(new DocPostRequest(file, metadataDto));
+        docService.createDoc(new DocPostRequest(file, metadata));
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
