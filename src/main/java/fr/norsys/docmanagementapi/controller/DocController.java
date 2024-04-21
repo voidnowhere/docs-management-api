@@ -2,10 +2,7 @@ package fr.norsys.docmanagementapi.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.norsys.docmanagementapi.dto.DocPostRequest;
-import fr.norsys.docmanagementapi.dto.DocResponse;
-import fr.norsys.docmanagementapi.dto.MetadataDto;
-import fr.norsys.docmanagementapi.dto.ShareDocRequest;
+import fr.norsys.docmanagementapi.dto.*;
 import fr.norsys.docmanagementapi.exception.MethodArgumentNotValidExceptionHandler;
 import fr.norsys.docmanagementapi.service.AuthService;
 import fr.norsys.docmanagementapi.service.DocService;
@@ -125,5 +122,15 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
         return docs.isEmpty() ?
                 ResponseEntity.noContent().build() :
                 ResponseEntity.ok(docs);
+    }
+
+    @GetMapping("/{docId}/permissions")
+    @PreAuthorize("@securityService.isDocBelongToCurrentUser(#docId)")
+    public ResponseEntity<List<DocPermissionDto>> getDocPermissions(@PathVariable UUID docId) {
+        List<DocPermissionDto> permissions = docService.getDocPermissions(docId);
+
+        return permissions.isEmpty() ?
+                ResponseEntity.noContent().build() :
+                ResponseEntity.ok(permissions);
     }
 }
