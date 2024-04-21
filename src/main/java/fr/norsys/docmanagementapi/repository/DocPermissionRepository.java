@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static fr.norsys.docmanagementapi.Tables.DOC;
 import static fr.norsys.docmanagementapi.Tables.DOC_PERMISSION;
 
 @Repository

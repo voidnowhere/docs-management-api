@@ -21,9 +21,11 @@ public class SecurityService {
         return currentUserId.equals(docOwnerId);
     }
 
-    public boolean hasPermissionToDocDownload(UUID docId) {
+    public boolean doesCurrentUserHavePermissionToDownloadDoc(UUID docId) {
         UUID currentUserId = authService.getCurrentUserId();
 
-        return docPermissionRepository.isUserIdExistsInDocPermission(docId, currentUserId);
+        return isDocBelongToCurrentUser(docId)
+                ||
+                docPermissionRepository.isUserIdExistsInDocPermission(docId, currentUserId);
     }
 }

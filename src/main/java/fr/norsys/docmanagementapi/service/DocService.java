@@ -13,8 +13,6 @@ import fr.norsys.docmanagementapi.repository.MetadataRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +27,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class DocService {
-    private static final Logger log = LoggerFactory.getLogger(DocService.class);
     private final DocRepository docRepository;
     private final MetadataRepository metadataRepository;
     private final StorageService storageService;
@@ -37,16 +34,17 @@ public class DocService {
     private final UserService userService;
     private final DocPermissionRepository docPermissionRepository;
 
-    public List<DocResponse> findAll() {
-        List<Doc> docs = docRepository.findAll();
+    public List<DocResponse> findAll(UUID ownerId) {
+        List<Doc> docs = docRepository.findAll(ownerId);
+
         return docs.stream().map(doc -> DocResponse.builder()
                 .id(doc.getId())
                 .title(doc.getTitle())
+                .type(doc.getType())
                 .creationDate(doc.getCreationDate())
                 .metadata(doc.getMetadata())
                 .build()
         ).toList();
-
     }
 
     public DocResponse findById(UUID id) {
@@ -60,8 +58,9 @@ public class DocService {
                 .build();
     }
 
-    public List<DocResponse> searchByKeyword(String keyword) {
-        List<Doc> docs = docRepository.searchByKeyword(keyword);
+    public List<DocResponse> searchByKeyword(UUID ownerId, String keyword) {
+        List<Doc> docs = docRepository.searchByKeyword(ownerId, keyword);
+
         return docs.stream().map(doc -> DocResponse.builder()
                 .id(doc.getId())
                 .title(doc.getTitle())
@@ -130,8 +129,9 @@ public class DocService {
         docPermissionRepository.bulkCreateDocPermission(docPermissions);
     }
 
-    public List<DocResponse> getSharedDocs() {
-        List<Doc> docs = docRepository.getSharedDocs();
+    public List<DocResponse> getSharedDocs(UUID ownerId) {
+        List<Doc> docs = docRepository.getSharedDocs(ownerId);
+
         return docs.stream().map(doc -> DocResponse.builder()
                 .id(doc.getId())
                 .title(doc.getTitle())
@@ -139,6 +139,5 @@ public class DocService {
                 .metadata(doc.getMetadata())
                 .build()
         ).toList();
-
     }
 }

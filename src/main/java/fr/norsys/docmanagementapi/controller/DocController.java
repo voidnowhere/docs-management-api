@@ -7,6 +7,7 @@ import fr.norsys.docmanagementapi.dto.DocResponse;
 import fr.norsys.docmanagementapi.dto.MetadataDto;
 import fr.norsys.docmanagementapi.dto.ShareDocRequest;
 import fr.norsys.docmanagementapi.exception.MethodArgumentNotValidExceptionHandler;
+import fr.norsys.docmanagementapi.service.AuthService;
 import fr.norsys.docmanagementapi.service.DocService;
 import fr.norsys.docmanagementapi.service.SecurityService;
 import jakarta.validation.Valid;
@@ -33,17 +34,19 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
     private final DocService docService;
     private final ObjectMapper objectMapper;
     private final SecurityService securityService;
+    private final AuthService authService;
 
     @GetMapping
     public ResponseEntity<List<DocResponse>> findAll(
             @RequestParam(required = false, name = "keyword") Optional<String> optionalKeyword
     ) {
         List<DocResponse> docs;
+        UUID currentUserId = authService.getCurrentUserId();
 
         if (optionalKeyword.isEmpty() || optionalKeyword.get().isEmpty()) {
-            docs = docService.findAll();
+            docs = docService.findAll(currentUserId);
         } else {
-            docs = docService.searchByKeyword(optionalKeyword.get());
+            docs = docService.searchByKeyword(currentUserId, optionalKeyword.get());
         }
 
         return docs.isEmpty() ?
@@ -53,7 +56,10 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
 
     @GetMapping("/search/{keyword}")
     public ResponseEntity<List<DocResponse>> searchByKeyword(@PathVariable String keyword) {
-        List<DocResponse> docs = docService.searchByKeyword(keyword);
+        UUID currentUserId = authService.getCurrentUserId();
+
+        List<DocResponse> docs = docService.searchByKeyword(currentUserId, keyword);
+
         return docs.isEmpty() ?
                 ResponseEntity.noContent().build() :
                 ResponseEntity.ok(docs);
@@ -87,10 +93,7 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
     }
 
     @GetMapping("/{docId}/download")
-    @PreAuthorize("""
-            @securityService.isDocBelongToCurrentUser(#docId) or
-            @securityService.hasPermissionToDocDownload(#docId)
-            """)
+    @PreAuthorize("@securityService.doesCurrentUserHavePermissionToDownloadDoc(#docId)")
     public ResponseEntity<Resource> downloadDoc(@PathVariable UUID docId) throws MalformedURLException {
         Resource file = docService.downloadDoc(docId);
 
@@ -113,12 +116,14 @@ public class DocController implements MethodArgumentNotValidExceptionHandler {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/shared-docs")
+    @GetMapping("/shared")
     public ResponseEntity<List<DocResponse>> getSharedDocs() {
-        List<DocResponse> docs = docService.getSharedDocs();
+        UUID currentUserId = authService.getCurrentUserId();
+
+        List<DocResponse> docs = docService.getSharedDocs(currentUserId);
+
         return docs.isEmpty() ?
                 ResponseEntity.noContent().build() :
                 ResponseEntity.ok(docs);
     }
-
 }
