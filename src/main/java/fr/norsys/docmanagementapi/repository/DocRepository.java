@@ -19,13 +19,41 @@ public class DocRepository {
     private final DSLContext dslContext;
 
     public List<Doc> findAll(UUID ownerId) {
-        List<Doc> docs = dslContext
-                .select(DOC.ID, DOC.TITLE, DOC.TYPE, DOC.CREATION_DATE)
+        return dslContext
+                .select(DOC.ID, DOC.TITLE, DOC.CREATION_DATE, DOC.TYPE, METADATA.KEY, METADATA.VALUE)
                 .from(DOC)
+                .leftJoin(METADATA)
+                .on(METADATA.DOC_ID.eq(DOC.ID))
                 .where(ownerCondition(ownerId))
-                .fetchInto(Doc.class);
+                .fetchGroups(
+                        g -> Doc
+                                .builder()
+                                .id(g.get(DOC.ID))
+                                .title(g.get(DOC.TITLE))
+                                .creationDate(g.get(DOC.CREATION_DATE))
+                                .type(g.get(DOC.TYPE))
+                                .build(),
+                        g -> Metadata
+                                .builder()
+                                .key(g.get(METADATA.KEY))
+                                .value(g.get(METADATA.VALUE))
+                                .build()
+                )
+                .entrySet()
+                .stream()
+                .map(e -> {
+                    Doc doc = e.getKey();
 
-        return setMetadataToDocs(docs);
+                    doc.setMetadata(e.getValue()
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    Metadata::getKey,
+                                    Metadata::getValue
+                            )));
+
+                    return doc;
+                })
+                .toList();
     }
 
     public Doc findById(UUID id) {
@@ -132,6 +160,7 @@ public class DocRepository {
     private Condition getSearchCondition(String likeExpression) {
         return DOC.TITLE.likeIgnoreCase(likeExpression)
                 .or(DOC.TYPE.likeIgnoreCase(likeExpression))
+                .or(DOC.CREATION_DATE.likeIgnoreCase(likeExpression))
                 .or(METADATA.KEY.likeIgnoreCase(likeExpression))
                 .or(METADATA.VALUE.likeIgnoreCase(likeExpression));
     }
