@@ -7,11 +7,11 @@ import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static fr.norsys.docmanagementapi.Tables.DOC;
 import static fr.norsys.docmanagementapi.Tables.DOC_PERMISSION;
 
 @Repository
@@ -50,5 +50,13 @@ public class DocPermissionRepository {
                 .where(DOC_PERMISSION.DOC_ID.eq(docId))
                 .and(DOC_PERMISSION.USER_ID.eq(userId))
         );
+    }
+
+    public List<DocPermission> getDocPermissions(UUID docId) {
+        return dslContext
+                .select(DOC_PERMISSION.USER_EMAIL, DOC_PERMISSION.PERMISSION_TYPE)
+                .from(DOC_PERMISSION)
+                .where(DOC_PERMISSION.DOC_ID.eq(docId))
+                .fetchInto(DocPermission.class);
     }
 }

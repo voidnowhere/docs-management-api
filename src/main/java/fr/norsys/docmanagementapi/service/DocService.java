@@ -1,35 +1,31 @@
 package fr.norsys.docmanagementapi.service;
 
+import fr.norsys.docmanagementapi.dto.DocPermissionDto;
 import fr.norsys.docmanagementapi.dto.DocPostRequest;
 import fr.norsys.docmanagementapi.dto.DocResponse;
 import fr.norsys.docmanagementapi.dto.ShareDocRequest;
 import fr.norsys.docmanagementapi.entity.Doc;
 import fr.norsys.docmanagementapi.entity.DocPermission;
 import fr.norsys.docmanagementapi.entity.Metadata;
+import fr.norsys.docmanagementapi.entity.PermissionType;
 import fr.norsys.docmanagementapi.exception.DocAlreadyExistException;
 import fr.norsys.docmanagementapi.repository.DocPermissionRepository;
 import fr.norsys.docmanagementapi.repository.DocRepository;
 import fr.norsys.docmanagementapi.repository.MetadataRepository;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class DocService {
-    private static final Logger log = LoggerFactory.getLogger(DocService.class);
     private final DocRepository docRepository;
     private final MetadataRepository metadataRepository;
     private final StorageService storageService;
@@ -37,16 +33,17 @@ public class DocService {
     private final UserService userService;
     private final DocPermissionRepository docPermissionRepository;
 
-    public List<DocResponse> findAll() {
-        List<Doc> docs = docRepository.findAll();
+    public List<DocResponse> findAll(UUID ownerId) {
+        List<Doc> docs = docRepository.findAll(ownerId);
+
         return docs.stream().map(doc -> DocResponse.builder()
                 .id(doc.getId())
                 .title(doc.getTitle())
+                .type(doc.getType())
                 .creationDate(doc.getCreationDate())
                 .metadata(doc.getMetadata())
                 .build()
         ).toList();
-
     }
 
     public DocResponse findById(UUID id) {
@@ -60,8 +57,9 @@ public class DocService {
                 .build();
     }
 
-    public List<DocResponse> searchByKeyword(String keyword) {
-        List<Doc> docs = docRepository.searchByKeyword(keyword);
+    public List<DocResponse> searchByKeyword(UUID ownerId, String keyword) {
+        List<Doc> docs = docRepository.searchByKeyword(ownerId, keyword);
+
         return docs.stream().map(doc -> DocResponse.builder()
                 .id(doc.getId())
                 .title(doc.getTitle())
@@ -72,7 +70,7 @@ public class DocService {
     }
 
     @Transactional
-    public void createDoc(@Valid DocPostRequest docPostRequest) throws IOException {
+    public void createDoc(DocPostRequest docPostRequest) throws IOException {
         UUID currentUserId = authService.getCurrentUserId();
         String fileChecksum = storageService.getFileChecksum(docPostRequest.file());
         if (docRepository.isDocChecksumExists(fileChecksum)) {
@@ -112,16 +110,27 @@ public class DocService {
     }
 
     public void shareDoc(UUID docId, ShareDocRequest shareDocRequest) {
-        List<UserRepresentation> users = userService.getAllUsers(shareDocRequest.emails());
+        List<UserRepresentation> users = userService.getAllUsers(shareDocRequest
+                .users()
+                .stream()
+                .map(DocPermissionDto::email).toList()
+        );
 
         Set<DocPermission> docPermissions = new HashSet<>();
+        Map<String, PermissionType> shareDocWithUserMap = shareDocRequest
+                .users()
+                .stream()
+                .collect(Collectors.toMap(
+                        DocPermissionDto::email,
+                        DocPermissionDto::permission
+                ));
 
         users.forEach(user -> docPermissions.add(
                 new DocPermission(
                         docId,
                         UUID.fromString(user.getId()),
                         user.getEmail(),
-                        shareDocRequest.permissionType()
+                        shareDocWithUserMap.get(user.getEmail())
                 )
         ));
 
@@ -130,8 +139,9 @@ public class DocService {
         docPermissionRepository.bulkCreateDocPermission(docPermissions);
     }
 
-    public List<DocResponse> getSharedDocs() {
-        List<Doc> docs = docRepository.getSharedDocs();
+    public List<DocResponse> getSharedDocs(UUID ownerId) {
+        List<Doc> docs = docRepository.getSharedDocs(ownerId);
+
         return docs.stream().map(doc -> DocResponse.builder()
                 .id(doc.getId())
                 .title(doc.getTitle())
@@ -139,6 +149,14 @@ public class DocService {
                 .metadata(doc.getMetadata())
                 .build()
         ).toList();
+    }
 
+    public List<DocPermissionDto> getDocPermissions(UUID docId) {
+        List<DocPermission> docPermissions = docPermissionRepository.getDocPermissions(docId);
+
+        return docPermissions
+                .stream()
+                .map(p -> new DocPermissionDto(p.getUserEmail(), p.getPermissionType()))
+                .toList();
     }
 }

@@ -9,6 +9,7 @@ import java.util.UUID;
 public record DocResponse(
         UUID id,
         String title,
+        String type,
         LocalDateTime creationDate,
         Map<String, String> metadata
 

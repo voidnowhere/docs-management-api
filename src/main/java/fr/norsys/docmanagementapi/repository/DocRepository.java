@@ -3,7 +3,6 @@ package fr.norsys.docmanagementapi.repository;
 import fr.norsys.docmanagementapi.entity.Doc;
 import fr.norsys.docmanagementapi.entity.Metadata;
 import fr.norsys.docmanagementapi.exception.DocNotFoundException;
-import fr.norsys.docmanagementapi.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -18,14 +17,43 @@ import static fr.norsys.docmanagementapi.Tables.*;
 @RequiredArgsConstructor
 public class DocRepository {
     private final DSLContext dslContext;
-    private final AuthService authService;
 
-    public List<Doc> findAll() {
-        List<Doc> docs = dslContext.select(DOC.ID, DOC.TITLE, DOC.CREATION_DATE, DOC.TYPE)
+    public List<Doc> findAll(UUID ownerId) {
+        return dslContext
+                .select(DOC.ID, DOC.TITLE, DOC.CREATION_DATE, DOC.TYPE, METADATA.KEY, METADATA.VALUE)
                 .from(DOC)
-                .where(ownerCondition())
-                .fetchInto(Doc.class);
-        return setMetadataToDocs(docs);
+                .leftJoin(METADATA)
+                .on(METADATA.DOC_ID.eq(DOC.ID))
+                .where(ownerCondition(ownerId))
+                .fetchGroups(
+                        g -> Doc
+                                .builder()
+                                .id(g.get(DOC.ID))
+                                .title(g.get(DOC.TITLE))
+                                .creationDate(g.get(DOC.CREATION_DATE))
+                                .type(g.get(DOC.TYPE))
+                                .build(),
+                        g -> Metadata
+                                .builder()
+                                .key(g.get(METADATA.KEY))
+                                .value(g.get(METADATA.VALUE))
+                                .build()
+                )
+                .entrySet()
+                .stream()
+                .map(e -> {
+                    Doc doc = e.getKey();
+
+                    doc.setMetadata(e.getValue()
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    Metadata::getKey,
+                                    Metadata::getValue
+                            )));
+
+                    return doc;
+                })
+                .toList();
     }
 
     public Doc findById(UUID id) {
@@ -39,15 +67,16 @@ public class DocRepository {
         return doc;
     }
 
-    public List<Doc> searchByKeyword(String keyword) {
+    public List<Doc> searchByKeyword(UUID ownerId, String keyword) {
         String likeExpression = "%" + keyword + "%";
-        List<Doc> docs = dslContext.select(DOC.ID, DOC.TITLE, DOC.CREATION_DATE, DOC.TYPE)
+
+        List<Doc> docs = dslContext
+                .select(DOC.ID, DOC.TITLE, DOC.CREATION_DATE, DOC.TYPE)
                 .from(DOC)
                 .leftJoin(METADATA)
-                .on(METADATA.DOC_ID.eq(DOC.ID)
-                        .and(METADATA.VALUE.likeIgnoreCase(likeExpression)))
-                .where(ownerCondition())
-                .and((getSearchCondition(likeExpression)))
+                .on(METADATA.DOC_ID.eq(DOC.ID))
+                .where(ownerCondition(ownerId))
+                .and(getSearchCondition(likeExpression))
                 .fetchInto(Doc.class);
 
         return setMetadataToDocs(docs);
@@ -130,24 +159,25 @@ public class DocRepository {
 
     private Condition getSearchCondition(String likeExpression) {
         return DOC.TITLE.likeIgnoreCase(likeExpression)
-                .or(DOC.CREATION_DATE.likeIgnoreCase(likeExpression))
                 .or(DOC.TYPE.likeIgnoreCase(likeExpression))
-                .or(METADATA.VALUE.likeIgnoreCase(likeExpression))
-                .or(METADATA.DOC_ID.isNotNull());
+                .or(DOC.CREATION_DATE.likeIgnoreCase(likeExpression))
+                .or(METADATA.KEY.likeIgnoreCase(likeExpression))
+                .or(METADATA.VALUE.likeIgnoreCase(likeExpression));
     }
 
-    private Condition ownerCondition() {
-        return DOC.OWNER_ID.eq(authService.getCurrentUserId());
+    private Condition ownerCondition(UUID ownerId) {
+        return DOC.OWNER_ID.eq(ownerId);
     }
 
-    public List<Doc> getSharedDocs() {
-        List<Doc> docs = dslContext.select(DOC.ID, DOC.TITLE, DOC.CREATION_DATE, DOC.TYPE)
+    public List<Doc> getSharedDocs(UUID ownerId) {
+        List<Doc> docs = dslContext
+                .select(DOC.ID, DOC.TITLE, DOC.CREATION_DATE, DOC.TYPE)
                 .from(DOC)
-                .rightJoin(DOC_PERMISSION)
+                .join(DOC_PERMISSION)
                 .on(DOC_PERMISSION.DOC_ID.eq(DOC.ID))
-                .where(DOC_PERMISSION.USER_ID.eq(authService.getCurrentUserId()))
+                .where(DOC_PERMISSION.USER_ID.eq(ownerId))
                 .fetchInto(Doc.class);
+
         return setMetadataToDocs(docs);
     }
-
 }
